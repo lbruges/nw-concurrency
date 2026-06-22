@@ -1,4 +1,4 @@
-# codigo-facilito-concurrency
+# nw-concurrency
 ## Environment Configuration
 JDK: 1.23
 
@@ -29,9 +29,22 @@ matrix.log-exec-time=true
 Create a new file named <b>request.properties</b> and add it to the out/production folder (if running from IDE), or to the same path that contains the compiled jar. <br>
 Define the following properties:
 ```
-req.url=https://rest.ensembl.org/sequence/id/%s?content-type=application/json
+req.url=https://rest.ensembl.org/sequence/id/%s?type=cdna;content-type=application/json
 req.seq-a-id=ENSG00000239615
 req.seq-b-id=ENSG00000239617
+```
+Other sample sequences could be obtained from:
+```
+https://rest.ensembl.org/xrefs/symbol/homo_sapiens/VEGFA?content-type=application/json
+[
+    {
+        "type": "gene",
+        "id": "ENSG00000112715"
+    }
+]
+
+https://rest.ensembl.org/lookup/id/ENSG00000112715?expand=1;content-type=application/json
+// Look for protein_coding biotype
 ```
 
 ## Compiling instructions
