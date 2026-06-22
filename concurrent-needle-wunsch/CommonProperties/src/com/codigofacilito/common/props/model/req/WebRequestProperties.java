@@ -15,7 +15,7 @@ public class WebRequestProperties implements PropsWithPrefix {
     private final String seqBId;
     public static final String PROPS_PREFIX = "req";
 
-    private static final WebRequestProperties DEFAULT = new WebRequestProperties("https://rest.ensembl.org/sequence/id/%s?content-type=application/json",
+    private static final WebRequestProperties DEFAULT = new WebRequestProperties("https://rest.ensembl.org/sequence/id/%s?type=cdna;content-type=application/json",
             "ENSG00000239615", "ENSG00000239617");
 
     public WebRequestProperties(String url, String seqAId, String seqBId) {
