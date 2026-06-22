@@ -1,14 +1,76 @@
 # nw-concurrency
-## Environment Configuration
-JDK: 1.23
 
-## Application Properties
-All properties are optional and have a default value if not defined
+A Java 23 project that implements **Needleman-Wunsch global sequence alignment** for DNA/RNA sequences. It supports configurable sequential or concurrent (ForkJoin) matrix computation, a decorator-based processing pipeline, and an optional HTTP workflow that fetches sequences from the [Ensembl REST API](https://rest.ensembl.org/).
 
-### Sample Global properties:
-Create a new file named <b>application.properties</b> and add it to the out/production folder (if running from IDE), or to the same path that contains the compiled jar.<br> 
-Define the following properties:
+## Quick overview
+
+```mermaid
+flowchart LR
+    Client -->|"POST /api/sequence"| Server[LocalHttpServer]
+    Server --> Ensembl[Ensembl_API]
+    Server --> Align[NeedlemanWunschAligner]
+    Align --> Output[result.txt / matrix.txt]
 ```
+
+On each HTTP request, the server fetches two sequences by Ensembl gene ID, computes an optimal global alignment, and writes the result to a file or the console.
+
+## Modules
+
+| Module | Role |
+|--------|------|
+| **CommonProperties** | Loads `application.properties` and `request.properties` |
+| **NeedlemanWunschAligner** | Algorithm, decorator pipeline, concurrency, printers |
+| **WebRequest** | Ensembl HTTP client and local HTTP server |
+| **NeedlemanOrchestrator** | Application entry point (executable JAR) |
+
+See [docs/architecture.md](docs/architecture.md) for module dependencies, design patterns, and detailed diagrams.
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Architecture](docs/architecture.md) | Modules, request flow, decorator pipeline, class diagram |
+| [Algorithm](docs/algorithm.md) | Needleman-Wunsch steps, scoring, worked example |
+| [Concurrency](docs/concurrency.md) | ForkJoin matrix fill and parallel HTTP fetch |
+| [API](docs/api.md) | HTTP endpoint contract and Ensembl integration |
+| [Configuration](docs/configuration.md) | Full property reference and defaults |
+
+## Environment
+
+JDK: **23**
+
+## Quick start
+
+1. Build `NeedlemanOrchestrator.jar` via IntelliJ (see [Compiling instructions](#compiling-instructions) below).
+2. Place `application.properties` and `request.properties` next to the JAR (see [Configuration](docs/configuration.md) for samples).
+3. Run:
+
+```bash
+java -jar NeedlemanOrchestrator.jar
+```
+
+4. Send a POST request:
+
+```bash
+curl -X POST http://localhost:8080/api/sequence
+```
+
+## Output
+
+| File | When | Contents |
+|------|------|----------|
+| `result.txt` | `backtracker.printer.enabled=true` (default) | Globally aligned sequences with `_` gap characters |
+| `matrix.txt` | `matrix.printer.enabled=true` | Full scoring matrix |
+
+## Application properties
+
+All properties are optional and have defaults. See [docs/configuration.md](docs/configuration.md) for the full reference.
+
+### Sample `application.properties`
+
+Create a file named **application.properties** in the same directory as the compiled JAR (or `out/production/` when running from the IDE):
+
+```properties
 backtracker.printer.enabled=true
 backtracker.printer.output=FILE
 backtracker.printer.filename=result.txt
@@ -23,17 +85,21 @@ matrix.score.match=1
 matrix.score.miss=-1
 matrix.log-exec-time=true
 ```
-<b>Note:</b> please keep in mind that  matrix.concurrency.pool-size defaults to the number of available processors
 
-### Sample Web Request properties:
-Create a new file named <b>request.properties</b> and add it to the out/production folder (if running from IDE), or to the same path that contains the compiled jar. <br>
-Define the following properties:
-```
+Note: `matrix.concurrency.pool-size` defaults to the number of available processors.
+
+### Sample `request.properties`
+
+Create a file named **request.properties** in the same directory as the JAR:
+
+```properties
 req.url=https://rest.ensembl.org/sequence/id/%s?type=cdna;content-type=application/json
 req.seq-a-id=ENSG00000239615
 req.seq-b-id=ENSG00000239617
 ```
-Other sample sequences could be obtained from:
+
+Other sample sequences can be obtained from:
+
 ```
 https://rest.ensembl.org/xrefs/symbol/homo_sapiens/VEGFA?content-type=application/json
 [
@@ -48,23 +114,28 @@ https://rest.ensembl.org/lookup/id/ENSG00000112715?expand=1;content-type=applica
 ```
 
 ## Compiling instructions
-To compile this project using IntelliJ idea, please follow these steps:
-```
-Step 1: Create a New Artifact
-Open your project in IntelliJ IDEA.
-Go to File > Project Structure.
-Select Artifacts in the left panel.
-Click the + button and choose JAR > From modules with dependencies.
-Choose the Main Class (if you're creating an executable JAR) and select the modules you want to include.
-Make sure that the "Include in project build" checkbox is checked.
-Click OK to create the artifact.
-Step 2: Build the Artifact
-After the artifact is set up, go to Build > Build Artifacts.
-Select your artifact and choose Build.
-This will create a JAR file in the out/artifacts directory.
-```
 
-To run the JAR file, place the <b>application.properties</b> and <b>request.properties</b> in the same folder and run:
-```
+To compile this project using IntelliJ IDEA:
+
+**Step 1: Create a New Artifact**
+
+1. Open your project in IntelliJ IDEA.
+2. Go to File > Project Structure.
+3. Select Artifacts in the left panel.
+4. Click the + button and choose JAR > From modules with dependencies.
+5. Choose the Main Class and select the modules you want to include.
+6. Make sure that the "Include in project build" checkbox is checked.
+7. Click OK to create the artifact.
+
+**Step 2: Build the Artifact**
+
+1. Go to Build > Build Artifacts.
+2. Select your artifact and choose Build.
+
+This creates a JAR file in the `out/artifacts` directory.
+
+To run the JAR, place **application.properties** and **request.properties** in the same folder and run:
+
+```bash
 java -jar NeedlemanOrchestrator.jar
 ```
